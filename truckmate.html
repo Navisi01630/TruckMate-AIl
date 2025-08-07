@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TruckMate AI - Freight Matching</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #0ea5e9;
+            --accent: #f97316;
+            --light: #f8fafc;
+            --dark: #0f172a;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 0 auto;
+            opacity: 0.9;
+        }
+        
+        .app-container {
+            display: flex;
+            min-height: 500px;
+        }
+        
+        .form-section {
+            flex: 1;
+            padding: 30px;
+            background: var(--light);
+            border-right: 1px solid #e2e8f0;
+        }
+        
+        .results-section {
+            flex: 1;
+            padding: 30px;
+            background: white;
+        }
+        
+        .section-title {
+            color: var(--dark);
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent);
+            font-size: 1.4rem;
+        }
+        
+        .user-type {
+            display: flex;
+            margin-bottom: 25px;
+            background: #e2e8f0;
+            border-radius: 50px;
+            padding: 5px;
+        }
+        
+        .user-type button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: none;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 50px;
+            transition: all 0.3s;
+        }
+        
+        .user-type button.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        }
+        
+        button.submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+        
+        button.submit-btn:hover {
+            background: #ea580c;
+        }
+        
+        .match-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+            transition: transform 0.3s;
+        }
+        
+        .match-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .match-card h3 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .match-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        
+        .match-details div {
+            flex: 1;
+        }
+        
+        .match-details strong {
+            color: var(--dark);
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .match-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .match-actions button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .match-actions .contact-btn {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .match-actions .contact-btn:hover {
+            background: #1d4ed8;
+        }
+        
+        .match-actions .details-btn {
+            background: #e2e8f0;
+            color: var(--dark);
+        }
+        
+        .match-actions .details-btn:hover {
+            background: #cbd5e1;
+        }
+        
+        .ai-badge {
+            display: inline-block;
+            background: linear-gradient(to right, #8b5cf6, #ec4899);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #64748b;
+        }
+        
+        .empty-state img {
+            width: 100px;
+            opacity: 0.5;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+            
+            .form-section {
+                border-right: none;
+                border-bottom: 1px solid #e2e8f0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>TruckMate <span class="ai-badge">AI</span></h1>
+            <p>AI-powered freight matching for Bangladesh truckers - Reduce empty trips, increase earnings</p>
+        </header>
+        
+        <div class="app-container">
+            <div class="form-section">
+                <h2 class="section-title">Post Your Requirement</h2>
+                
+                <div class="user-type">
+                    <button id="truckerBtn" class="active">I'm a Trucker</button>
+                    <button id="shipperBtn">I Need Shipping</button>
+                </div>
+                
+                <div id="truckerForm">
+                    <div class="form-group">
+                        <label for="truckType">Truck Type</label>
+                        <select id="truckType">
+                            <option value="">Select your truck type</option>
+                            <option value="pickup">Pickup Truck (1-2 tons)</option>
+                            <option value="medium">Medium Truck (3-5 tons)</option>
+                            <option value="heavy">Heavy Truck (5+ tons)</option>
+                            <option value="covered">Covered Van</option>
+                            <option value="refrigerated">Refrigerated Truck</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="currentLocation">Current Location</label>
+                        <input type="text" id="currentLocation" placeholder="e.g., Dhaka, Chittagong, etc.">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="destination">Destination</label>
+                        <input type="text" id="destination" placeholder="Where do you want to go?">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="availableDate">Available Date</label>
+                        <input type="date" id="availableDate">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="contactInfo">Contact Information</label>
+                        <input type="text" id="contactInfo" placeholder="Phone number or WhatsApp">
+                    </div>
+                    
+                    <button class="submit-btn" onclick="findShipments()">Find Matching Shipments</button>
+                </div>
+                
+                <div id="shipperForm" style="display: none;">
+                    <div class="form-group">
+                        <label for="goodsType">Type of Goods</label>
+                        <input type="text" id="goodsType" placeholder="e.g., Garments, Food, Electronics">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="weight">Approximate Weight</label>
+                        <input type="text" id="weight" placeholder="e.g., 2 tons, 500 kg">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="pickupLocation">Pickup Location</label>
+                        <input type="text" id="pickupLocation" placeholder="Where to pick up?">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="deliveryLocation">Delivery Location</label>
+                        <input type="text" id="deliveryLocation" placeholder="Where to deliver?">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="shipperContact">Contact Information</label>
+                        <input type="text" id="shipperContact" placeholder="Phone number or WhatsApp">
+                    </div>
+                    
+                    <button class="submit-btn" onclick="findTrucks()">Find Available Trucks</button>
+                </div>
+            </div>
+            
+            <div class="results-section">
+                <h2 class="section-title">AI Matching Results</h2>
+                <div id="resultsContainer">
+                    <div class="empty-state">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z' /%3E%3C/svg%3E" alt="Truck">
+                        <h3>No matches yet</h3>
+                        <p>Submit your truck information or shipping needs to find matches</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Toggle between trucker and shipper forms
+        document.getElementById('truckerBtn').addEventListener('click', function() {
+            document.getElementById('truckerForm').style.display = 'block';
+            document.getElementById('shipperForm').style.display = 'none';
+            this.classList.add('active');
+            document.getElementById('shipperBtn').classList.remove('active');
+        });
+        
+        document.getElementById('shipperBtn').addEventListener('click', function() {
+            document.getElementById('shipperForm').style.display = 'block';
+            document.getElementById('truckerForm').style.display = 'none';
+            this.classList.add('active');
+            document.getElementById('truckerBtn').classList.remove('active');
+        });
+        
+        // Sample data for demonstration
+        const sampleShipments = [
+            {
+                id: 1,
+                goods: "Textile Products",
+                weight: "3 tons",
+                origin: "Dhaka",
+                destination: "Chittagong",
+                contact: "+88017XXXXXXX",
+                date: "2023-10-15",
+                matchScore: 92
+            },
+            {
+                id: 2,
+                goods: "Electronics",
+                weight: "1.5 tons",
+                origin: "Narayanganj",
+                destination: "Sylhet",
+                contact: "+88018XXXXXXX",
+                date: "2023-10-16",
+                matchScore: 87
+            },
+            {
+                id: 3,
+                goods: "Agricultural Products",
+                weight: "4 tons",
+                origin: "Rajshahi",
+                destination: "Khulna",
+                contact: "+88019XXXXXXX",
+                date: "2023-10-17",
+                matchScore: 78
+            }
+        ];
+        
+        const sampleTrucks = [
+            {
+                id: 1,
+                type: "Covered Van",
+                capacity: "3 tons",
+                current: "Dhaka",
+                destination: "Anywhere",
+                contact: "+88016XXXXXXX",
+                date: "2023-10-15",
+                matchScore: 95
+            },
+            {
+                id: 2,
+                type: "Heavy Truck",
+                capacity: "7 tons",
+                current: "Chittagong",
+                destination: "Dhaka or nearby",
+                contact: "+88015XXXXXXX",
+                date: "2023-10-16",
+                matchScore: 88
+            },
+            {
+                id: 3,
+                type: "Refrigerated Truck",
+                capacity: "4 tons",
+                current: "Khulna",
+                destination: "Northern areas",
+                contact: "+88013XXXXXXX",
+                date: "2023-10-17",
+                matchScore: 83
+            }
+        ];
+        
+        // Simulate AI matching
+        function findShipments() {
+            const truckType = document.getElementById('truckType').value;
+            const currentLocation = document.getElementById('currentLocation').value;
+            const destination = document.getElementById('destination').value;
+            
+            if (!truckType || !currentLocation || !destination) {
+                alert("Please fill all required fields");
+                return;
+            }
+            
+            // Simulate AI matching
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.innerHTML = '<div class="empty-state"><h3>AI is finding matches...</h3><p>Analyzing thousands of shipments</p></div>';
+            
+            setTimeout(() => {
+                displayResults(sampleShipments, 'shipment');
+            }, 1500);
+        }
+        
+        function findTrucks() {
+            const goodsType = document.getElementById('goodsType').value;
+            const weight = document.getElementById('weight').value;
+            const pickupLocation = document.getElementById('pickupLocation').value;
+            const deliveryLocation = document.getElementById('deliveryLocation').value;
+            
+            if (!goodsType || !weight || !pickupLocation || !deliveryLocation) {
+                alert("Please fill all required fields");
+                return;
+            }
+            
+            // Simulate AI matching
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.innerHTML = '<div class="empty-state"><h3>AI is finding trucks...</h3><p>Searching available vehicles near you</p></div>';
+            
+            setTimeout(() => {
+                displayResults(sampleTrucks, 'truck');
+            }, 1500);
+        }
+        
+        function displayResults(items, type) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            
+            if (items.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="empty-state">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z' /%3E%3C/svg%3E" alt="Truck">
+                        <h3>No matches found</h3>
+                        <p>Try adjusting your requirements or check back later</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            
+            items.forEach(item => {
+                if (type === 'shipment') {
+                    html += `
+                        <div class="match-card">
+                            <h3>${item.goods} <span class="ai-badge">${item.matchScore}% Match</span></h3>
+                            <div class="match-details">
+                                <div>
+                                    <strong>Route:</strong>
+                                    ${item.origin} → ${item.destination}
+                                </div>
+                                <div>
+                                    <strong>Weight:</strong>
+                                    ${item.weight}
+                                </div>
+                            </div>
+                            <div class="match-details">
+                                <div>
+                                    <strong>Pickup Date:</strong>
+                                    ${item.date}
+                                </div>
+                                <div>
+                                    <strong>Contact:</strong>
+                                    ${item.contact}
+                                </div>
+                            </div>
+                            <div class="match-actions">
+                                <button class="contact-btn">Contact Shipper</button>
+                                <button class="details-btn">Details</button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="match-card">
+                            <h3>${item.type} <span class="ai-badge">${item.matchScore}% Match</span></h3>
+                            <div class="match-details">
+                                <div>
+                                    <strong>Location:</strong>
+                                    ${item.current}
+                                </div>
+                                <div>
+                                    <strong>Capacity:</strong>
+                                    ${item.capacity}
+                                </div>
+                            </div>
+                            <div class="match-details">
+                                <div>
+                                    <strong>Available Date:</strong>
+                                    ${item.date}
+                                </div>
+                                <div>
+                                    <strong>Contact:</strong>
+                                    ${item.contact}
+                                </div>
+                            </div>
+                            <div class="match-actions">
+                                <button class="contact-btn">Contact Trucker</button>
+                                <button class="details-btn">Details</button>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            resultsContainer.innerHTML = html;
+        }
+        
+        // Initialize with today's date
+        document.getElementById('availableDate').valueAsDate = new Date();
+    </script>
+</body>
+</html>
